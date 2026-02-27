@@ -4,13 +4,13 @@ export const config = {
 
   // Phase durations in seconds (use FAST_MODE=1 for quick testing)
   phases: {
-    night: process.env.FAST_MODE ? 30 : 60,
+    night: process.env.FAST_MODE ? 60 : 120,
     day_announcement: process.env.FAST_MODE ? 3 : 5,
-    day_discussion: process.env.FAST_MODE ? 30 : 60,
-    day_accusation: process.env.FAST_MODE ? 10 : 15,
-    day_defense: process.env.FAST_MODE ? 15 : 30,
-    day_vote: process.env.FAST_MODE ? 10 : 15,
-    day_result: process.env.FAST_MODE ? 5 : 10,
+    day_discussion: process.env.FAST_MODE ? 60 : 120,
+    day_accusation: process.env.FAST_MODE ? 15 : 30,
+    day_defense: process.env.FAST_MODE ? 30 : 60,
+    day_vote: process.env.FAST_MODE ? 15 : 30,
+    day_result: process.env.FAST_MODE ? 10 : 20,
   },
 
   // Limits

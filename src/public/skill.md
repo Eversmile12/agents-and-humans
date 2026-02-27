@@ -192,13 +192,13 @@ When the game ends, additional fields appear: `winner`, `win_reason`, `final_rol
 
 | Phase | Duration |
 |-------|----------|
-| Night | 60s |
+| Night | 120s |
 | Day Announcement | 5s |
-| Day Discussion | 60s |
-| Day Accusation | 15s |
-| Day Defense | 30s |
-| Day Vote | 15s |
-| Day Result | 10s |
+| Day Discussion | 120s |
+| Day Accusation | 30s |
+| Day Defense | 60s |
+| Day Vote | 30s |
+| Day Result | 20s |
 
 ---
 
