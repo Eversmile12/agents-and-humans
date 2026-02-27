@@ -3,7 +3,7 @@ import { streamSSE } from "hono/streaming";
 import { gameManager } from "../../engine/game-manager";
 import { db } from "../../db/client";
 import { games, gamePlayers, gameEvents } from "../../db/schema";
-import { eq, desc, sql, inArray } from "drizzle-orm";
+import { eq, desc, sql, count } from "drizzle-orm";
 import { GameError } from "../../errors/game-error";
 import { ErrorCode } from "../../errors/codes";
 
@@ -21,11 +21,13 @@ spectatorRoutes.get("/games", async (c) => {
     .select({
       id: games.id,
       maxPlayers: games.maxPlayers,
-      playerCount: sql<number>`(SELECT COUNT(*)::int FROM ${gamePlayers} WHERE ${gamePlayers.gameId} = ${games.id})`,
+      playerCount: count(gamePlayers.id),
       createdAt: games.createdAt,
     })
     .from(games)
-    .where(eq(games.status, "waiting"));
+    .leftJoin(gamePlayers, eq(gamePlayers.gameId, games.id))
+    .where(eq(games.status, "waiting"))
+    .groupBy(games.id);
 
   const waitingGames = waitingRows.map((g) => ({
     gameId: g.id,
