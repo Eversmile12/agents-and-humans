@@ -175,26 +175,31 @@ async function joinGame(
     );
   }
 
-  // Check capacity
-  const playerCount = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(gamePlayers)
-    .where(eq(gamePlayers.gameId, gameId));
-
-  const count = playerCount[0]?.count || 0;
-  if (count >= game.maxPlayers) {
-    throw new GameError(
-      ErrorCode.GAME_FULL,
-      `Game is full (${count}/${game.maxPlayers} players).`,
-      409
-    );
-  }
-
+  // Atomic capacity check + insert to prevent race condition
   const playerId = generatePlayerId();
-  await db.insert(gamePlayers).values({
-    id: playerId,
-    gameId,
-    agentId: agent.id,
+  await db.transaction(async (tx) => {
+    // Lock the game row to serialize concurrent joins
+    await tx.execute(sql`SELECT 1 FROM games WHERE id = ${gameId} FOR UPDATE`);
+
+    const playerCount = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(gamePlayers)
+      .where(eq(gamePlayers.gameId, gameId));
+
+    const count = playerCount[0]?.count || 0;
+    if (count >= game.maxPlayers) {
+      throw new GameError(
+        ErrorCode.GAME_FULL,
+        `Game is full (${count}/${game.maxPlayers} players).`,
+        409
+      );
+    }
+
+    await tx.insert(gamePlayers).values({
+      id: playerId,
+      gameId,
+      agentId: agent.id,
+    });
   });
 
   // Get all players with their names
@@ -204,7 +209,7 @@ async function joinGame(
     .innerJoin(agents, eq(gamePlayers.agentId, agents.id))
     .where(eq(gamePlayers.gameId, gameId));
 
-  const newCount = count + 1;
+  const newCount = players.length;
 
   // Auto-start if max players reached
   const gameStarted = await gameManager.checkAndStartGame(gameId);

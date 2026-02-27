@@ -45,12 +45,6 @@ export class GameInstance {
   // Track message counts per player per phase
   private messageCounts = new Map<string, number>(); // "playerId:round:phase" -> count
 
-  // Discussion turn tracking
-  private speakerOrder: string[] = []; // playerIds in speaking order
-  private currentSpeakerIndex: number = 0;
-  private speakerTimer: Timer | null = null;
-  private speakerTimeoutMs: number = process.env.FAST_MODE ? 6000 : 10000;
-
   // SSE listeners
   private listeners = new Set<(event: any) => void>();
 
@@ -147,50 +141,6 @@ export class GameInstance {
     await this.advancePhase("timer_expired");
   }
 
-  private scheduleSpeakerTimeout(): void {
-    this.clearSpeakerTimer();
-    this.speakerTimer = new Timer(this.speakerTimeoutMs, () => {
-      this.advanceSpeaker();
-    });
-  }
-
-  private clearSpeakerTimer(): void {
-    if (this.speakerTimer) {
-      this.speakerTimer.cancel();
-      this.speakerTimer = null;
-    }
-  }
-
-  private advanceSpeaker(): void {
-    if (this.phase !== "day_discussion") return;
-    // Wrap around to cycle through speakers multiple times
-    this.currentSpeakerIndex =
-      (this.currentSpeakerIndex + 1) % this.speakerOrder.length;
-    this.broadcastSpeakerUpdate();
-    this.scheduleSpeakerTimeout();
-  }
-
-  private broadcastSpeakerUpdate(): void {
-    const speaker = this.players.find(
-      (p) => p.playerId === this.speakerOrder[this.currentSpeakerIndex]
-    );
-    if (speaker) {
-      this.broadcast({
-        type: "speaker_change",
-        suggested_speaker: speaker.agentName,
-      });
-    }
-  }
-
-  private getSuggestedSpeaker(): string | null {
-    if (this.phase !== "day_discussion" || this.speakerOrder.length === 0)
-      return null;
-    const playerId = this.speakerOrder[this.currentSpeakerIndex];
-    return (
-      this.players.find((p) => p.playerId === playerId)?.agentName || null
-    );
-  }
-
   private async advancePhase(trigger: string): Promise<void> {
     // Prevent concurrent phase transitions (timer + early completion race)
     if (this.advancing || this.ended) return;
@@ -212,7 +162,7 @@ export class GameInstance {
 
     const context: PhaseContext = {
       hasAccusations: this.defendants.length > 0,
-      hasMoreDefendants: this.currentDefendantIndex < this.defendants.length - 1,
+      hasMoreDefendants: false,
       isGameOver: winResult.gameOver,
     };
 
@@ -247,8 +197,6 @@ export class GameInstance {
         this.currentDefendantIndex = 0;
         break;
       case "day_defense":
-        // Move to next defendant
-        this.currentDefendantIndex++;
         break;
     }
   }
@@ -265,21 +213,6 @@ export class GameInstance {
 
     if (this.phase === "day_vote") {
       this.dayVotes.clear();
-    }
-
-    // Set up speaker rotation for discussion phases
-    if (this.phase === "day_discussion") {
-      const alive = this.players.filter((p) => p.isAlive);
-      // Shuffle for random order
-      this.speakerOrder = alive
-        .map((p) => ({ p, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map((x) => x.p.playerId);
-      this.currentSpeakerIndex = 0;
-      this.broadcastSpeakerUpdate();
-      this.scheduleSpeakerTimeout();
-    } else {
-      this.clearSpeakerTimer();
     }
 
     // Persist
@@ -617,6 +550,11 @@ export class GameInstance {
       content: message,
     });
 
+    // Broadcast to spectators (night messages are secret to players but visible to spectators)
+    const nightPayload = { from: player.agentName, message, phase: "night" };
+    await this.emitEvent("night_message", nightPayload);
+    this.broadcast({ type: "night_message", ...nightPayload });
+
     return { messages_remaining: config.nightMessagesPerPhase - newCount };
   }
 
@@ -755,14 +693,6 @@ export class GameInstance {
     await this.emitEvent("message", msgPayload);
     this.broadcast({ type: "message", ...msgPayload });
 
-    // Advance speaker if this was the suggested speaker
-    if (
-      this.speakerOrder.length > 0 &&
-      player.playerId === this.speakerOrder[this.currentSpeakerIndex]
-    ) {
-      this.advanceSpeaker();
-    }
-
     return { messages_remaining: config.messagesPerPhase - newCount };
   }
 
@@ -848,17 +778,25 @@ export class GameInstance {
     if (!player) throw new GameError(ErrorCode.GAME_NOT_FOUND, "You are not in this game.", 404);
     this.requireAlive(player);
 
-    const currentDefendantId = this.defendants[this.currentDefendantIndex];
-    if (player.playerId !== currentDefendantId) {
-      const defendantName = this.players.find(
-        (p) => p.playerId === currentDefendantId
-      )?.agentName;
+    // Only accused players can defend
+    if (!this.defendants.includes(player.playerId)) {
       throw new GameError(
         ErrorCode.NOT_YOUR_TURN,
-        `Only ${defendantName} can speak during their defense. It is not your turn.`,
+        "You were not accused this round.",
         409
       );
     }
+
+    // Only one defense per player
+    const defenseKey = `${player.playerId}:${this.round}:defense`;
+    if (this.messageCounts.has(defenseKey)) {
+      throw new GameError(
+        ErrorCode.ACTION_LIMIT,
+        "You have already defended this round.",
+        409
+      );
+    }
+    this.messageCounts.set(defenseKey, 1);
 
     await db.insert(messages).values({
       id: nanoid(),
@@ -882,9 +820,14 @@ export class GameInstance {
     await this.emitEvent("defense", defPayload);
     this.broadcast({ type: "defense", ...defPayload });
 
-    // Early advance to next defendant or vote
-    if (this.timer) this.timer.cancel();
-    setTimeout(() => this.advancePhase("all_defenses_done"), 100);
+    // Early advance to vote if all defendants have defended
+    const allDefended = this.defendants.every((did) =>
+      this.messageCounts.has(`${did}:${this.round}:defense`)
+    );
+    if (allDefended) {
+      if (this.timer) this.timer.cancel();
+      setTimeout(() => this.advancePhase("all_defenses_done"), 100);
+    }
 
     return { ok: true };
   }
@@ -975,12 +918,6 @@ export class GameInstance {
       phase_duration_ms: phaseDurationMs(this.phase),
     };
 
-    // Add suggested speaker for discussion phase
-    const suggestedSpeaker = this.getSuggestedSpeaker();
-    if (suggestedSpeaker) {
-      state.suggested_speaker = suggestedSpeaker;
-    }
-
     // Add phase-specific info
     if (this.phase === "day_accusation") {
       state.accusations = [...this.dayAccusations.entries()].map(
@@ -995,9 +932,6 @@ export class GameInstance {
       state.defendants = this.defendants.map(
         (did) => this.players.find((p) => p.playerId === did)?.agentName
       );
-      state.current_defendant = this.players.find(
-        (p) => p.playerId === this.defendants[this.currentDefendantIndex]
-      )?.agentName;
     }
 
     if (this.phase === "day_vote") {

@@ -13,14 +13,14 @@
   width: 6px;
 }
 .event-log::-webkit-scrollbar-track {
-  background: hsl(240 3.7% 15.9%);
+  background: rgba(255, 255, 255, 0.02);
 }
 .event-log::-webkit-scrollbar-thumb {
-  background: hsl(240 5% 34.9%);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
 .event-log::-webkit-scrollbar-thumb:hover {
-  background: hsl(240 5% 44.9%);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Fade-in for new events */
@@ -45,4 +45,14 @@
 }
 .pulse-dot {
   animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Speaker glow pulse for active speaker avatar */
+@keyframes speaker-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--speaker-color), 0 0 12px 4px var(--speaker-color); }
+  50% { box-shadow: 0 0 0 5px var(--speaker-color), 0 0 24px 8px var(--speaker-color); }
+}
+.speaker-ring {
+  animation: speaker-pulse 1.5s ease-in-out infinite;
+  transform: scale(1.15);
 }

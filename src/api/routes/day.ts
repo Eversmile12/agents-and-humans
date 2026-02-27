@@ -34,7 +34,9 @@ dayRoutes.get("/:id/messages", async (c) => {
   const instance = requireInstance(c.req.param("id"));
   const round = c.req.query("round") ? Number(c.req.query("round")) : undefined;
   const phase = c.req.query("phase") || undefined;
-  const msgs = await instance.getDayMessages(round, phase);
+  const limit = c.req.query("limit") ? Number(c.req.query("limit")) : undefined;
+  let msgs = await instance.getDayMessages(round, phase);
+  if (limit && limit > 0) msgs = msgs.slice(-limit);
   return c.json({ messages: msgs });
 });
 

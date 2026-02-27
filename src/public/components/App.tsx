@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { PhaseBar } from "./PhaseBar";
 import { EventLog } from "./EventLog";
+import { PlayerArena } from "./PlayerArena";
+
+const PLAYER_COLORS = [
+  "#4ECDC4", "#A78BFA", "#84CC16", "#FF6B6B",
+  "#F59E0B", "#EC4899", "#38BDF8", "#F97316",
+];
 
 export interface GameState {
   game_id: string;
@@ -13,7 +19,6 @@ export interface GameState {
   winner?: string;
   win_reason?: string;
   final_roles?: Record<string, string>;
-  suggested_speaker?: string;
 }
 
 export interface GameEvent {
@@ -29,8 +34,6 @@ export interface GameEvent {
   // message / defense
   from?: string;
   message?: string;
-  // speaker_change
-  suggested_speaker?: string;
   // accusation
   accuser?: string;
   target?: string;
@@ -56,6 +59,8 @@ export function App() {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [allPlayers, setAllPlayers] = useState<string[]>([]);
+  const [lastSpeaker, setLastSpeaker] = useState<string | null>(null);
   const retryCount = useRef(0);
 
   // Extract gameId from URL: /spectate/game_xyz
@@ -96,6 +101,11 @@ export function App() {
 
       switch (event.type) {
         case "connected":
+          {
+            const aliveNames = event.alive || [];
+            const elimNames = (event.eliminated || []).map((e) => e.name);
+            setAllPlayers([...aliveNames, ...elimNames]);
+          }
           setState({
             game_id: event.game_id || gameId,
             phase: event.phase || "",
@@ -108,6 +118,7 @@ export function App() {
           break;
 
         case "phase_change":
+          setLastSpeaker(null);
           setState((prev) =>
             prev
               ? {
@@ -121,13 +132,14 @@ export function App() {
           );
           break;
 
-        case "speaker_change":
-          setState((prev) =>
-            prev
-              ? { ...prev, suggested_speaker: event.suggested_speaker }
-              : prev
-          );
+        case "message":
+        case "defense":
+        case "night_message":
+          if (event.from) setLastSpeaker(event.from);
           break;
+
+        case "speaker_change":
+          break; // legacy, ignored
 
         case "night_kill":
           setState((prev) => {
@@ -197,12 +209,20 @@ export function App() {
     return cleanup;
   }, [connectSSE]);
 
+  const playerColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allPlayers.forEach((name, i) => {
+      map[name] = PLAYER_COLORS[i % PLAYER_COLORS.length]!;
+    });
+    return map;
+  }, [allPlayers]);
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Agents & Humans</h1>
-          <p className="text-muted-foreground">{error}</p>
+          <h1 className="text-2xl font-black mb-2 text-white">Agents & Humans</h1>
+          <p className="text-white/50 text-sm">{error}</p>
         </div>
       </div>
     );
@@ -212,8 +232,8 @@ export function App() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Agents & Humans</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-black mb-2 text-white">Agents & Humans</h1>
+          <p className="text-white/50 text-sm">
             {connected ? "Loading game state..." : "Connecting..."}
           </p>
         </div>
@@ -231,9 +251,23 @@ export function App() {
         alive={state.alive.length}
         connected={connected}
         winner={state.winner}
-        suggestedSpeaker={state.suggested_speaker}
       />
-      <EventLog events={events} />
+      <div className="flex-1 flex min-h-0">
+        <div className="w-1/2 flex flex-col border-r border-white/[0.06]">
+          <PlayerArena
+            allPlayers={allPlayers}
+            alive={state.alive}
+            eliminated={state.eliminated}
+            playerColorMap={playerColorMap}
+            lastSpeaker={lastSpeaker}
+            phase={state.phase}
+            finalRoles={state.final_roles}
+          />
+        </div>
+        <div className="w-1/2 flex flex-col min-h-0">
+          <EventLog events={events} playerColorMap={playerColorMap} />
+        </div>
+      </div>
     </>
   );
 }

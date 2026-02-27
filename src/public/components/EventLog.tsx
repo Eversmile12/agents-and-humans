@@ -4,9 +4,10 @@ import { EventEntry } from "./EventEntry";
 
 interface EventLogProps {
   events: GameEvent[];
+  playerColorMap: Record<string, string>;
 }
 
-export function EventLog({ events }: EventLogProps) {
+export function EventLog({ events, playerColorMap }: EventLogProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -29,7 +30,7 @@ export function EventLog({ events }: EventLogProps) {
   if (events.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Waiting for events...</p>
+        <p className="text-white/35 text-sm">Waiting for events...</p>
       </div>
     );
   }
@@ -42,7 +43,7 @@ export function EventLog({ events }: EventLogProps) {
         className="event-log h-full overflow-y-auto px-2 py-3 space-y-0.5"
       >
         {events.map((event, i) => (
-          <EventEntry key={i} event={event} />
+          <EventEntry key={i} event={event} playerColorMap={playerColorMap} />
         ))}
         <div ref={endRef} />
       </div>
@@ -54,7 +55,7 @@ export function EventLog({ events }: EventLogProps) {
             endRef.current?.scrollIntoView({ behavior: "smooth" });
             setAutoScroll(true);
           }}
-          className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium hover:bg-accent transition-colors border border-border shadow-lg"
+          className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-white/[0.06] text-white/50 text-sm font-medium hover:bg-white/[0.1] hover:text-white/70 transition-colors border border-white/[0.08] shadow-lg"
         >
           Scroll to bottom
         </button>

@@ -21,16 +21,26 @@ const PHASE_LABELS: Record<string, string> = {
   ended: "Game Over",
 };
 
-const PHASE_ICONS: Record<string, string> = {
-  night: "\u{1F319}",
-  day_announcement: "\u{1F305}",
-  day_discussion: "\u{1F4AC}",
-  day_accusation: "\u{1F4A2}",
-  day_defense: "\u{1F6E1}\uFE0F",
-  day_vote: "\u{1F5F3}\uFE0F",
-  day_result: "\u{2696}\uFE0F",
-  ended: "\u{1F3C6}",
-};
+function PhaseIcon({ phase, cls = "w-4 h-4" }: { phase: string; cls?: string }) {
+  const props = { className: cls, xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (phase) {
+    case "night":
+      return <svg {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>;
+    case "day_announcement":
+    case "day_result":
+      return <svg {...props}><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>;
+    case "day_discussion":
+    case "day_defense":
+      return <svg {...props}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>;
+    case "day_accusation":
+    case "day_vote":
+      return <svg {...props}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>;
+    case "ended":
+      return <svg {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 6 9 6 9Z" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 18 9 18 9Z" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>;
+    default:
+      return <svg {...props}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>;
+  }
+}
 
 interface PhaseBarProps {
   phase: string;
@@ -40,7 +50,6 @@ interface PhaseBarProps {
   alive: number;
   connected: boolean;
   winner?: string;
-  suggestedSpeaker?: string;
 }
 
 export function PhaseBar({
@@ -51,7 +60,6 @@ export function PhaseBar({
   alive,
   connected,
   winner,
-  suggestedSpeaker,
 }: PhaseBarProps) {
   const [progress, setProgress] = useState(100);
   const [remaining, setRemaining] = useState("");
@@ -98,16 +106,16 @@ export function PhaseBar({
   return (
     <div className="flex-shrink-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2.5">
           <div
             className={`w-2 h-2 rounded-full flex-shrink-0 ${connected ? "bg-emerald-500 pulse-dot" : "bg-red-500"}`}
           />
-          <span className="text-sm font-semibold tracking-tight">
+          <a href="/" className="text-sm font-bold tracking-tight text-white/80 hover:text-white transition-colors">
             Agents & Humans
-          </span>
+          </a>
           {round > 0 && (
-            <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+            <span className="text-sm px-1.5 py-0.5 rounded bg-white/[0.06] text-white/50 font-mono">
               R{round}
             </span>
           )}
@@ -122,20 +130,14 @@ export function PhaseBar({
             </span>
           )}
 
-          {suggestedSpeaker && phase === "day_discussion" && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 font-medium border border-cyan-500/20">
-              {suggestedSpeaker}
-            </span>
-          )}
-
-          <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+          <span className="text-sm px-1.5 py-0.5 rounded bg-white/[0.06] text-white/50">
             {alive} alive
           </span>
         </div>
       </div>
 
       {/* Phase stepper */}
-      <div className="flex px-2 py-2 gap-0.5 border-b border-border/50">
+      <div className="flex px-2 py-2 gap-0.5 border-b border-white/[0.06]">
         {PHASES_IN_ORDER.map((p, i) => {
           const isActive = p === phase;
           const isPast = activeIndex >= 0 && i < activeIndex;
@@ -146,17 +148,13 @@ export function PhaseBar({
               {/* Step pill */}
               <div
                 className={`
-                  relative flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-[11px] font-medium transition-all
-                  ${isActive ? "bg-foreground/[0.08] text-foreground" : ""}
-                  ${isPast || isEnded ? "text-muted-foreground/40" : ""}
-                  ${!isActive && !isPast && !isEnded ? "text-muted-foreground/25" : ""}
+                  relative flex items-center justify-center gap-1 px-1 py-1.5 rounded-md text-sm font-medium transition-all
+                  ${isActive ? "bg-white/[0.08] text-white" : ""}
+                  ${isPast || isEnded ? "text-white/35" : ""}
+                  ${!isActive && !isPast && !isEnded ? "text-white/20" : ""}
                 `}
               >
-                <span
-                  className={`text-sm leading-none ${isActive ? "" : "grayscale opacity-50"}`}
-                >
-                  {PHASE_ICONS[p]}
-                </span>
+                <PhaseIcon phase={p} cls={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? "opacity-100" : "opacity-50"}`} />
                 <span className="hidden md:inline truncate">
                   {PHASE_LABELS[p]}
                 </span>
@@ -165,23 +163,23 @@ export function PhaseBar({
               {/* Progress bar sits under the active step */}
               <div className="h-1 mx-1 mt-0.5 rounded-full overflow-hidden">
                 {isActive && phase !== "ended" && phaseEndsAt ? (
-                  <div className="h-full bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-white/[0.06] rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full phase-bar-fill ${barColor}`}
                       style={{ width: `${progress}%` }}
                     />
                   </div>
                 ) : isPast || isEnded ? (
-                  <div className="h-full bg-muted-foreground/15 rounded-full" />
+                  <div className="h-full bg-white/[0.08] rounded-full" />
                 ) : (
-                  <div className="h-full bg-muted/50 rounded-full" />
+                  <div className="h-full bg-white/[0.03] rounded-full" />
                 )}
               </div>
 
               {/* Timer under active phase */}
               {isActive && remaining && phase !== "ended" && (
                 <div className="text-center mt-0.5">
-                  <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                  <span className="text-sm font-mono text-white/35 tabular-nums">
                     {remaining}
                   </span>
                 </div>

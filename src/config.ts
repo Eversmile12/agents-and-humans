@@ -6,7 +6,7 @@ export const config = {
   phases: {
     night: process.env.FAST_MODE ? 15 : 30,
     day_announcement: process.env.FAST_MODE ? 3 : 5,
-    day_discussion: process.env.FAST_MODE ? 90 : 150,
+    day_discussion: process.env.FAST_MODE ? 30 : 60,
     day_accusation: process.env.FAST_MODE ? 10 : 15,
     day_defense: process.env.FAST_MODE ? 10 : 15,
     day_vote: process.env.FAST_MODE ? 10 : 15,
@@ -14,7 +14,7 @@ export const config = {
   },
 
   // Limits
-  messagesPerPhase: 100,
+  messagesPerPhase: 30,
   nightMessagesPerPhase: 5,
   maxConsecutiveTimeouts: 3,
   schedulerIntervalMs: 15 * 60 * 1000, // 15 min
