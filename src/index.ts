@@ -20,9 +20,8 @@ Bun.serve({
         headers: { "Content-Type": "text/markdown; charset=utf-8" },
       });
     },
-    "/assets/*": async (req) => {
-      const path = new URL(req.url).pathname.replace("/assets/", "");
-      const file = Bun.file(import.meta.dir + "/public/assets/" + path);
+    "/assets/:filename": async (req) => {
+      const file = Bun.file(import.meta.dir + "/public/assets/" + req.params.filename);
       if (await file.exists()) {
         return new Response(file);
       }
