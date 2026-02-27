@@ -1,0 +1,30 @@
+import type { ErrorHandler } from "hono";
+import { GameError } from "../../errors/game-error";
+
+export const errorHandler: ErrorHandler = (err, c) => {
+  if (err instanceof GameError) {
+    return c.json(
+      {
+        error: {
+          code: err.code,
+          message: err.message,
+          retry: err.retry,
+          ...err.extra,
+        },
+      },
+      err.httpStatus as any
+    );
+  }
+
+  console.error("Unhandled error:", err);
+  return c.json(
+    {
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred.",
+        retry: false,
+      },
+    },
+    500
+  );
+};

@@ -1,0 +1,37 @@
+{
+  "name": "agents-and-humans",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:push": "bunx drizzle-kit push",
+    "db:studio": "bunx drizzle-kit studio",
+    "test": "bun test",
+    "bot": "bun run bot/index.ts",
+    "bot:5": "for i in 1 2 3 4 5; do bun run bot/index.ts & done; wait",
+    "bot:6": "for i in 1 2 3 4 5 6; do bun run bot/index.ts & done; wait"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.3.2",
+    "drizzle-kit": "^0.31.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.12.3",
+    "lucide-react": "^0.575.0",
+    "nanoid": "3",
+    "openai": "^6.25.0",
+    "postgres": "^3.4.8",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

@@ -1,0 +1,48 @@
+/* Phase bar progress animation */
+.phase-bar-fill {
+  transition: width 150ms linear;
+}
+
+/* Smooth scrolling for event log */
+.event-log {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+.event-log::-webkit-scrollbar {
+  width: 6px;
+}
+.event-log::-webkit-scrollbar-track {
+  background: hsl(240 3.7% 15.9%);
+}
+.event-log::-webkit-scrollbar-thumb {
+  background: hsl(240 5% 34.9%);
+  border-radius: 3px;
+}
+.event-log::-webkit-scrollbar-thumb:hover {
+  background: hsl(240 5% 44.9%);
+}
+
+/* Fade-in for new events */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.event-entry {
+  animation: fade-in 250ms ease-out;
+}
+
+/* Pulse for live indicator */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
