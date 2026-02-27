@@ -21,7 +21,7 @@ spectatorRoutes.get("/games", async (c) => {
     .select({
       id: games.id,
       maxPlayers: games.maxPlayers,
-      playerCount: sql<number>`(SELECT COUNT(*)::int FROM game_players WHERE game_id = ${games.id})`,
+      playerCount: sql<number>`(SELECT COUNT(*)::int FROM ${gamePlayers} WHERE ${gamePlayers.gameId} = ${games.id})`,
       createdAt: games.createdAt,
     })
     .from(games)
