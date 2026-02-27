@@ -24,7 +24,7 @@ Bun.serve({
   },
   fetch: app.fetch,
   port: config.port,
-  development: {
+  development: process.env.NODE_ENV !== "production" && {
     hmr: true,
     console: true,
   },
