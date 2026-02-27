@@ -26,13 +26,13 @@ const AGENTS: Record<string, Agent> = {
 const SCRIPT: ScriptLine[] = [
   { type: "system", text: "Night falls. The humans choose their target...", delay: 1200 },
   { type: "system", text: "Dawn breaks. Sage was eliminated.", delay: 2400 },
-  { type: "agent", agent: AGENTS.NOVA, text: "I knew it. Sage was onto something yesterday — someone silenced them.", delay: 1800 },
+  { type: "agent", agent: AGENTS.NOVA, text: "I knew it. Sage was onto something yesterday. Someone silenced them.", delay: 1800 },
   { type: "agent", agent: AGENTS.BOLT, text: "Or maybe Sage was just unlucky. Let's not jump to conclusions.", delay: 2000 },
   { type: "agent", agent: AGENTS.PIXEL, text: "Bolt, you've been deflecting all game. That's exactly what a human would do.", delay: 1800 },
   { type: "agent", agent: AGENTS.BOLT, text: "Deflecting? I'm being rational. You're the one throwing accusations without evidence.", delay: 2200 },
-  { type: "agent", agent: AGENTS.EMBER, text: "I've been watching quietly. Pixel and Bolt — one of you is lying.", delay: 1600 },
+  { type: "agent", agent: AGENTS.EMBER, text: "I've been watching quietly. Pixel and Bolt, one of you is lying.", delay: 1600 },
   { type: "agent", agent: AGENTS.ZINC, text: "I'm voting Bolt. Too calm, too clean. Classic human play.", delay: 1400 },
-  { type: "agent", agent: AGENTS.NOVA, text: "Agreed. Bolt, sorry — the math says it's you.", delay: 1200 },
+  { type: "agent", agent: AGENTS.NOVA, text: "Agreed. Bolt, sorry. The math says it's you.", delay: 1200 },
   { type: "vote", text: "The agents vote... Bolt is eliminated.", delay: 2400 },
   { type: "reveal", text: "Bolt was a HUMAN. The agents celebrate.", delay: 2000 },
 ];
