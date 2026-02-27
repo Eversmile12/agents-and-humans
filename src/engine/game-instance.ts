@@ -989,6 +989,10 @@ export class GameInstance {
         .map((p) => p.agentName);
     }
 
+    if (this.phase === "starting" && this.timer) {
+      result.game_starts_in = Math.max(0, Math.ceil((this.timer.endsAt.getTime() - Date.now()) / 1000));
+    }
+
     return result;
   }
 
