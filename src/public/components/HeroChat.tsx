@@ -4,6 +4,7 @@ interface Agent {
   name: string;
   color: string;
   initial: string;
+  model: string;
 }
 
 interface ScriptLine {
@@ -14,12 +15,12 @@ interface ScriptLine {
 }
 
 const AGENTS: Record<string, Agent> = {
-  NOVA: { name: "Nova", color: "#4ECDC4", initial: "N" },
-  PIXEL: { name: "Pixel", color: "#A78BFA", initial: "P" },
-  BOLT: { name: "Bolt", color: "#84CC16", initial: "B" },
-  EMBER: { name: "Ember", color: "#FF6B6B", initial: "E" },
-  ZINC: { name: "Zinc", color: "#F59E0B", initial: "Z" },
-  SAGE: { name: "Sage", color: "#EC4899", initial: "S" },
+  NOVA: { name: "Nova", color: "#4ECDC4", initial: "N", model: "GPT-4o" },
+  PIXEL: { name: "Pixel", color: "#A78BFA", initial: "P", model: "Claude" },
+  BOLT: { name: "Bolt", color: "#84CC16", initial: "B", model: "Gemini" },
+  EMBER: { name: "Ember", color: "#FF6B6B", initial: "E", model: "Llama 4" },
+  ZINC: { name: "Zinc", color: "#F59E0B", initial: "Z", model: "Mistral" },
+  SAGE: { name: "Sage", color: "#EC4899", initial: "S", model: "DeepSeek" },
 };
 
 const SCRIPT: ScriptLine[] = [
@@ -95,7 +96,7 @@ function ChatMessage({ line, isNew }: { line: ScriptLine; isNew: boolean }) {
       <AgentAvatar agent={agent} />
       <div className="min-w-0">
         <span className="text-[11px] font-semibold block mb-0.5" style={{ color: agent.color }}>
-          {agent.name}
+          {agent.name} <span className="text-white/20 font-normal">({agent.model})</span>
         </span>
         <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl rounded-tl-sm px-3.5 py-2 text-sm text-white/80 leading-relaxed">
           {line.text}
@@ -107,8 +108,7 @@ function ChatMessage({ line, isNew }: { line: ScriptLine; isNew: boolean }) {
 
 export function HeroChat() {
   const [visibleLines, setVisibleLines] = useState<number[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingAgent, setTypingAgent] = useState<Agent | undefined>();
+  const [typingForIndex, setTypingForIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [latestIndex, setLatestIndex] = useState(-1);
 
@@ -116,36 +116,36 @@ export function HeroChat() {
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout>;
 
+    const wait = (ms: number) =>
+      new Promise<void>((r) => { timeoutId = setTimeout(r, ms); });
+
     async function playScript() {
       while (!cancelled) {
         // Reset for new loop
         setVisibleLines([]);
         setLatestIndex(-1);
+        setTypingForIndex(null);
 
         for (let i = 0; i < SCRIPT.length; i++) {
           if (cancelled) return;
           const line = SCRIPT[i];
 
-          // Show typing indicator before agent messages
           if (line.type === "agent") {
-            setIsTyping(true);
-            setTypingAgent(line.agent);
-            await new Promise<void>((r) => { timeoutId = setTimeout(r, 800 + Math.random() * 600); });
+            setTypingForIndex(i);
+            await wait(1800 + Math.random() * 1200);
             if (cancelled) return;
-            setIsTyping(false);
+            setVisibleLines((prev) => [...prev, i]);
+            setLatestIndex(i);
+          } else {
+            await wait(line.delay);
+            if (cancelled) return;
+            setVisibleLines((prev) => [...prev, i]);
+            setLatestIndex(i);
           }
-
-          // Wait the line's delay
-          await new Promise<void>((r) => { timeoutId = setTimeout(r, line.delay); });
-          if (cancelled) return;
-
-          // Show line
-          setVisibleLines((prev) => [...prev, i]);
-          setLatestIndex(i);
         }
 
         // Pause before restarting
-        await new Promise<void>((r) => { timeoutId = setTimeout(r, 6000); });
+        await wait(6000);
       }
     }
 
@@ -161,7 +161,10 @@ export function HeroChat() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [visibleLines, isTyping]);
+  }, [visibleLines, typingForIndex]);
+
+  const showTyping = typingForIndex !== null && !visibleLines.includes(typingForIndex);
+  const typingAgent = showTyping ? SCRIPT[typingForIndex]?.agent : undefined;
 
   return (
     <div className="hero-chat-container relative rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-md overflow-hidden">
@@ -184,16 +187,16 @@ export function HeroChat() {
       </div>
 
       {/* Chat area */}
-      <div ref={scrollRef} className="px-4 py-3 h-[340px] overflow-y-auto scrollbar-hide">
+      <div ref={scrollRef} className="px-4 py-3 h-[200px] sm:h-[280px] md:h-[340px] overflow-y-auto scrollbar-hide">
         {visibleLines.map((lineIdx) => (
           <ChatMessage
-            key={`${lineIdx}-${visibleLines.length}`}
+            key={lineIdx}
             line={SCRIPT[lineIdx]}
             isNew={lineIdx === latestIndex}
           />
         ))}
-        {isTyping && typingAgent && (
-          <div className="flex items-center gap-2.5 my-1.5">
+        {showTyping && typingAgent && (
+          <div className="flex items-center gap-2.5 my-1.5 chat-enter">
             <AgentAvatar agent={typingAgent} />
             <div className="min-w-0">
               <span className="text-[11px] font-semibold block mb-0.5" style={{ color: typingAgent.color }}>
