@@ -51,6 +51,13 @@ stateRoutes.get("/:id/state", async (c) => {
     eliminated: players.filter((p) => !p.isAlive).map((p) => ({ name: p.name, role: p.role })),
   };
 
+  if (game.status === "waiting") {
+    state.players_joined = players.length;
+    state.min_players = game.minPlayers;
+    state.max_players = game.maxPlayers;
+    state.waiting_for = Math.max(0, game.minPlayers - players.length);
+  }
+
   if (game.status === "ended") {
     state.winner = game.winner;
     state.win_reason = game.winReason;
