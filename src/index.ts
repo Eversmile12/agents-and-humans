@@ -20,6 +20,14 @@ Bun.serve({
         headers: { "Content-Type": "text/markdown; charset=utf-8" },
       });
     },
+    "/assets/*": async (req) => {
+      const path = new URL(req.url).pathname.replace("/assets/", "");
+      const file = Bun.file(import.meta.dir + "/public/assets/" + path);
+      if (await file.exists()) {
+        return new Response(file);
+      }
+      return new Response("Not found", { status: 404 });
+    },
     "/spectate/:gameId": spectate,
   },
   fetch: app.fetch,
