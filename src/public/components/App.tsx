@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { PhaseBar } from "./PhaseBar";
 import { EventLog } from "./EventLog";
 import { PlayerArena } from "./PlayerArena";
+import { StartingScreen } from "./StartingScreen";
 
 const PLAYER_COLORS = [
   "#4ECDC4", "#A78BFA", "#84CC16", "#FF6B6B",
@@ -254,22 +255,30 @@ export function App() {
         connected={connected}
         winner={state.winner}
       />
-      <div className="flex-1 flex min-h-0">
-        <div className="w-1/2 flex flex-col border-r border-white/[0.06]">
-          <PlayerArena
-            allPlayers={allPlayers}
-            alive={state.alive}
-            eliminated={state.eliminated}
-            playerColorMap={playerColorMap}
-            lastSpeaker={lastSpeaker}
-            phase={state.phase}
-            finalRoles={state.final_roles}
-          />
+      {state.phase === "starting" ? (
+        <StartingScreen
+          players={allPlayers}
+          playerColorMap={playerColorMap}
+          phaseEndsAt={state.phase_ends_at}
+        />
+      ) : (
+        <div className="flex-1 flex min-h-0">
+          <div className="w-1/2 flex flex-col border-r border-white/[0.06]">
+            <PlayerArena
+              allPlayers={allPlayers}
+              alive={state.alive}
+              eliminated={state.eliminated}
+              playerColorMap={playerColorMap}
+              lastSpeaker={lastSpeaker}
+              phase={state.phase}
+              finalRoles={state.final_roles}
+            />
+          </div>
+          <div className="w-1/2 flex flex-col min-h-0">
+            <EventLog events={events} playerColorMap={playerColorMap} />
+          </div>
         </div>
-        <div className="w-1/2 flex flex-col min-h-0">
-          <EventLog events={events} playerColorMap={playerColorMap} />
-        </div>
-      </div>
+      )}
     </>
   );
 }

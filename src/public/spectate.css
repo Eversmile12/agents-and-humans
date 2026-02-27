@@ -56,3 +56,23 @@
   animation: speaker-pulse 1.5s ease-in-out infinite;
   transform: scale(1.15);
 }
+
+/* Starting screen countdown tick */
+@keyframes countdown-tick {
+  0% { transform: scale(1.2); opacity: 0.5; }
+  30% { transform: scale(1); opacity: 1; }
+  100% { opacity: 1; }
+}
+.countdown-tick {
+  animation: countdown-tick 300ms ease-out;
+}
+
+/* Player chip staggered entrance */
+@keyframes chip-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.player-chip-enter {
+  opacity: 0;
+  animation: chip-enter 400ms ease-out forwards;
+}
