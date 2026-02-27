@@ -114,22 +114,22 @@ export class GameInstance {
         .where(eq(gamePlayers.id, p.playerId));
     }
 
-    // Start game
-    this.round = 1;
-    this.phase = "night";
+    // Start game with a warmup phase
+    this.round = 0;
+    this.phase = "starting";
 
     await db
       .update(games)
       .set({
         status: "in_progress",
-        phase: "night",
-        round: 1,
+        phase: "starting",
+        round: 0,
         startedAt: new Date(),
-        phaseEndsAt: new Date(Date.now() + phaseDurationMs("night")),
+        phaseEndsAt: new Date(Date.now() + phaseDurationMs("starting")),
       })
       .where(eq(games.id, this.gameId));
 
-    await this.emitEvent("phase_change", { phase: "night", round: 1 });
+    await this.emitEvent("phase_change", { phase: "starting", round: 0 });
     this.schedulePhaseEnd();
   }
 

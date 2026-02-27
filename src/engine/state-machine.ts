@@ -13,6 +13,9 @@ export function nextPhase(
   if (context.isGameOver) return "ended";
 
   switch (current) {
+    case "starting":
+      return "night";
+
     case "night":
       return "day_announcement";
 

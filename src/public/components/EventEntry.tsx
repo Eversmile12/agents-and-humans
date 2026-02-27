@@ -4,6 +4,7 @@ import { RoleBadge } from "./RoleBadge";
 
 function PhaseChangeEntry({ event }: { event: GameEvent }) {
   const labels: Record<string, string> = {
+    starting: "Game starting — check your role",
     night: "Night falls...",
     day_announcement: "Dawn breaks",
     day_discussion: "Discussion begins",

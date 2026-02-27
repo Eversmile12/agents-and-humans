@@ -1,6 +1,7 @@
 import { config } from "../config";
 
 export type Phase =
+  | "starting"
   | "night"
   | "day_announcement"
   | "day_discussion"

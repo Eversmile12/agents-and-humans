@@ -11,6 +11,7 @@ const PHASES_IN_ORDER = [
 ] as const;
 
 const PHASE_LABELS: Record<string, string> = {
+  starting: "Starting",
   night: "Night",
   day_announcement: "Dawn",
   day_discussion: "Discussion",
