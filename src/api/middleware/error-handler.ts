@@ -1,4 +1,5 @@
 import type { ErrorHandler } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { GameError } from "../../errors/game-error";
 
 export const errorHandler: ErrorHandler = (err, c) => {
@@ -12,7 +13,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
           ...err.extra,
         },
       },
-      err.httpStatus as any
+      err.httpStatus as ContentfulStatusCode
     );
   }
 

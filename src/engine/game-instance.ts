@@ -4,7 +4,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { Timer } from "../utils/timer";
 import { config } from "../config";
 import { nanoid } from "nanoid";
-import type { Phase } from "./phases";
+import type { Phase, PhaseEvent } from "./phases";
 import { phaseDurationMs } from "./phases";
 import { nextPhase, type PhaseContext } from "./state-machine";
 import { assignRoles, type RoleAssignment } from "./role-assigner";
@@ -32,8 +32,8 @@ export class GameInstance {
   private round: number = 0;
   private timer: Timer | null = null;
   private players: InternalPlayer[] = [];
-  private defendants: string[] = []; // playerIds accused this round
-  private currentDefendantIndex: number = 0;
+  private defendants: string[] = [];
+  private humansCount: number = 2;
   private ended: boolean = false;
   private advancing: boolean = false; // prevent concurrent advancePhase calls
 
@@ -64,7 +64,9 @@ export class GameInstance {
     for (const fn of this.listeners) {
       try {
         fn(event);
-      } catch {}
+      } catch (err) {
+        console.error("Broadcast listener error:", err);
+      }
     }
   }
 
@@ -86,6 +88,7 @@ export class GameInstance {
     if (!game) throw new Error(`Game ${this.gameId} not found`);
 
     // Assign roles
+    this.humansCount = game.humansCount;
     const assignments = assignRoles(
       playerRows.map((p) => ({ playerId: p.playerId, agentName: p.agentName })),
       game.humansCount
@@ -141,7 +144,7 @@ export class GameInstance {
     await this.advancePhase("timer_expired");
   }
 
-  private async advancePhase(trigger: string): Promise<void> {
+  private async advancePhase(trigger: PhaseEvent): Promise<void> {
     // Prevent concurrent phase transitions (timer + early completion race)
     if (this.advancing || this.ended) return;
     this.advancing = true;
@@ -153,7 +156,7 @@ export class GameInstance {
     }
   }
 
-  private async _advancePhaseInner(trigger: string): Promise<void> {
+  private async _advancePhaseInner(trigger: PhaseEvent): Promise<void> {
     // Exit current phase
     await this.exitPhase();
 
@@ -162,11 +165,10 @@ export class GameInstance {
 
     const context: PhaseContext = {
       hasAccusations: this.defendants.length > 0,
-      hasMoreDefendants: false,
       isGameOver: winResult.gameOver,
     };
 
-    const next = nextPhase(this.phase, trigger as any, context);
+    const next = nextPhase(this.phase, trigger, context);
 
     if (next === "ended" && winResult.gameOver) {
       await this.end(winResult.winner, winResult.reason);
@@ -194,7 +196,6 @@ export class GameInstance {
       case "day_accusation":
         // Collect accusation targets into defendants list
         this.defendants = [...new Set(this.dayAccusations.values())];
-        this.currentDefendantIndex = 0;
         break;
       case "day_defense":
         break;
@@ -208,7 +209,7 @@ export class GameInstance {
       this.dayVotes.clear();
       this.dayAccusations.clear();
       this.defendants = [];
-      this.currentDefendantIndex = 0;
+      this.messageCounts.clear();
     }
 
     if (this.phase === "day_vote") {
@@ -869,6 +870,17 @@ export class GameInstance {
 
     this.dayVotes.set(player.playerId, targetPlayerId);
 
+    const targetName2 = targetPlayerId === "skip"
+      ? "skip"
+      : this.players.find((p) => p.playerId === targetPlayerId)?.agentName || "unknown";
+
+    // Broadcast individual vote to spectators in real-time
+    this.broadcast({
+      type: "vote_cast",
+      voter: player.agentName,
+      target: targetName2,
+    });
+
     await db.insert(actions).values({
       id: nanoid(),
       gameId: this.gameId,
@@ -904,8 +916,6 @@ export class GameInstance {
       .map((p) => ({
         name: p.agentName,
         role: p.role,
-        round: undefined as number | undefined, // filled from DB ideally
-        cause: undefined as string | undefined,
       }));
 
     const state: any = {
@@ -914,6 +924,7 @@ export class GameInstance {
       round: this.round,
       alive: alivePlayers,
       eliminated,
+      humans_count: this.humansCount,
       phase_ends_at: this.timer?.endsAt.toISOString() || null,
       phase_duration_ms: phaseDurationMs(this.phase),
     };
@@ -987,7 +998,6 @@ export class GameInstance {
 
   destroy(): void {
     if (this.timer) this.timer.cancel();
-    this.clearSpeakerTimer();
     this.listeners.clear();
   }
 

@@ -2,7 +2,6 @@ import type { Phase, PhaseEvent } from "./phases";
 
 export interface PhaseContext {
   hasAccusations: boolean;
-  hasMoreDefendants: boolean;
   isGameOver: boolean;
 }
 
@@ -28,7 +27,6 @@ export function nextPhase(
       return "day_defense";
 
     case "day_defense":
-      if (context.hasMoreDefendants) return "day_defense";
       return "day_vote";
 
     case "day_vote":

@@ -17,12 +17,18 @@ function requireInstance(gameId: string) {
   return instance;
 }
 
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_REASON_LENGTH = 300;
+
 // POST /games/:id/discuss
 dayRoutes.post("/:id/discuss", async (c) => {
   const agent = c.get("agent");
   const body = await c.req.json<{ message?: string }>();
   if (!body.message || typeof body.message !== "string") {
     throw new GameError(ErrorCode.INVALID_INPUT, "message is required.", 422);
+  }
+  if (body.message.length > MAX_MESSAGE_LENGTH) {
+    throw new GameError(ErrorCode.INVALID_INPUT, `message must be ${MAX_MESSAGE_LENGTH} characters or less.`, 422);
   }
   const instance = requireInstance(c.req.param("id"));
   const result = await instance.handleDayDiscuss(agent.id, body.message);
@@ -50,6 +56,9 @@ dayRoutes.post("/:id/accuse", async (c) => {
   if (!body.reason || typeof body.reason !== "string") {
     throw new GameError(ErrorCode.INVALID_INPUT, "reason is required.", 422);
   }
+  if (body.reason.length > MAX_REASON_LENGTH) {
+    throw new GameError(ErrorCode.INVALID_INPUT, `reason must be ${MAX_REASON_LENGTH} characters or less.`, 422);
+  }
   const instance = requireInstance(c.req.param("id"));
   const result = await instance.handleAccuse(agent.id, body.target, body.reason);
   return c.json(result);
@@ -61,6 +70,9 @@ dayRoutes.post("/:id/defend", async (c) => {
   const body = await c.req.json<{ message?: string }>();
   if (!body.message || typeof body.message !== "string") {
     throw new GameError(ErrorCode.INVALID_INPUT, "message is required.", 422);
+  }
+  if (body.message.length > MAX_MESSAGE_LENGTH) {
+    throw new GameError(ErrorCode.INVALID_INPUT, `message must be ${MAX_MESSAGE_LENGTH} characters or less.`, 422);
   }
   const instance = requireInstance(c.req.param("id"));
   const result = await instance.handleDefend(agent.id, body.message);

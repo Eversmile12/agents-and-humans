@@ -1,20 +1,6 @@
 import React from "react";
 import type { GameEvent } from "./App";
-
-function RoleBadge({ role }: { role: string }) {
-  const isHuman = role === "human";
-  return (
-    <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded text-sm font-bold uppercase tracking-wide ${
-        isHuman
-          ? "bg-red-500/15 text-red-400 border border-red-500/20"
-          : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-      }`}
-    >
-      {isHuman ? "Human" : "Agent"}
-    </span>
-  );
-}
+import { RoleBadge } from "./RoleBadge";
 
 function PhaseChangeEntry({ event }: { event: GameEvent }) {
   const labels: Record<string, string> = {
@@ -53,14 +39,12 @@ function NightKillEntry({ event, playerColorMap }: { event: GameEvent; playerCol
   );
 }
 
-function NightMessageEntry({ event, playerColorMap }: { event: GameEvent; playerColorMap: Record<string, string> }) {
+function NightMessageEntry({ event }: { event: GameEvent }) {
   return (
     <div className="mx-2 px-3 py-2 rounded-lg bg-purple-500/[0.06] border border-purple-500/10">
       <div className="flex items-baseline gap-2">
         <span className="text-[10px] uppercase tracking-wider text-purple-400/60 font-semibold">secret</span>
-        <span className="font-semibold text-sm flex-shrink-0" style={{ color: playerColorMap[event.from!] || "#a78bfa" }}>
-          {event.from}
-        </span>
+        <span className="font-semibold text-sm flex-shrink-0 text-purple-400/80">???</span>
         <span className="text-sm leading-relaxed text-white/70">{event.message}</span>
       </div>
     </div>
@@ -105,6 +89,23 @@ function DefenseEntry({ event, playerColorMap }: { event: GameEvent; playerColor
         <span className="text-white/50">defends:</span>
       </div>
       <p className="text-sm text-white/80 mt-1 italic leading-relaxed">"{event.message}"</p>
+    </div>
+  );
+}
+
+function VoteCastEntry({ event, playerColorMap }: { event: GameEvent; playerColorMap: Record<string, string> }) {
+  const isSkip = event.target === "skip";
+  return (
+    <div className="mx-2 px-3 py-1.5 rounded-lg bg-white/[0.02]">
+      <div className="flex items-baseline gap-1.5 text-sm">
+        <span className="font-semibold" style={{ color: playerColorMap[event.voter!] }}>{event.voter}</span>
+        <span className="text-white/40">voted for</span>
+        {isSkip ? (
+          <span className="text-white/40 italic">skip</span>
+        ) : (
+          <span className="font-semibold" style={{ color: playerColorMap[event.target!] }}>{event.target}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -218,7 +219,7 @@ export function EventEntry({ event, playerColorMap }: { event: GameEvent; player
       content = <NightKillEntry event={event} playerColorMap={playerColorMap} />;
       break;
     case "night_message":
-      content = <NightMessageEntry event={event} playerColorMap={playerColorMap} />;
+      content = <NightMessageEntry event={event} />;
       break;
     case "message":
       content = <MessageEntry event={event} playerColorMap={playerColorMap} />;
@@ -228,6 +229,9 @@ export function EventEntry({ event, playerColorMap }: { event: GameEvent; player
       break;
     case "defense":
       content = <DefenseEntry event={event} playerColorMap={playerColorMap} />;
+      break;
+    case "vote_cast":
+      content = <VoteCastEntry event={event} playerColorMap={playerColorMap} />;
       break;
     case "vote_result":
       content = <VoteResultEntry event={event} playerColorMap={playerColorMap} />;

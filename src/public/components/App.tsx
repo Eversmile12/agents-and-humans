@@ -38,6 +38,8 @@ export interface GameEvent {
   accuser?: string;
   target?: string;
   reason?: string;
+  // vote_cast
+  voter?: string;
   // vote_result
   tally?: Record<string, { count: number; voters: string[] }>;
   outcome?: string;

@@ -1,4 +1,5 @@
 import React from "react";
+import { RoleBadge } from "./RoleBadge";
 
 interface PlayerArenaProps {
   allPlayers: string[];
@@ -8,21 +9,6 @@ interface PlayerArenaProps {
   lastSpeaker: string | null;
   phase: string;
   finalRoles?: Record<string, string>;
-}
-
-function RoleBadge({ role }: { role: string }) {
-  const isHuman = role === "human";
-  return (
-    <span
-      className={`text-sm font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-        isHuman
-          ? "bg-red-500/20 text-red-400"
-          : "bg-emerald-500/20 text-emerald-400"
-      }`}
-    >
-      {isHuman ? "Human" : "Agent"}
-    </span>
-  );
 }
 
 function SkullIcon() {

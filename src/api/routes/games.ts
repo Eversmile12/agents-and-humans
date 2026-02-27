@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { db } from "../../db/client";
 import { games, gamePlayers, agents } from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -137,7 +137,7 @@ gameRoutes.post("/join/:code", async (c) => {
 });
 
 async function joinGame(
-  c: any,
+  c: Context<AppEnv>,
   agent: { id: string; name: string },
   gameId: string
 ) {
@@ -155,8 +155,8 @@ async function joinGame(
 
   if (game.status !== "waiting") {
     throw new GameError(
-      ErrorCode.GAME_NOT_FOUND,
-      `Game "${gameId}" is not accepting players. Status: ${game.status}.`,
+      ErrorCode.GAME_ALREADY_STARTED,
+      `Game "${gameId}" has already started.`,
       409
     );
   }

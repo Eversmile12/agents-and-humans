@@ -17,12 +17,17 @@ function requireInstance(gameId: string) {
   return instance;
 }
 
+const MAX_MESSAGE_LENGTH = 500;
+
 // POST /games/:id/night/discuss
 nightRoutes.post("/:id/night/discuss", async (c) => {
   const agent = c.get("agent");
   const body = await c.req.json<{ message?: string }>();
   if (!body.message || typeof body.message !== "string") {
     throw new GameError(ErrorCode.INVALID_INPUT, "message is required.", 422);
+  }
+  if (body.message.length > MAX_MESSAGE_LENGTH) {
+    throw new GameError(ErrorCode.INVALID_INPUT, `message must be ${MAX_MESSAGE_LENGTH} characters or less.`, 422);
   }
   const instance = requireInstance(c.req.param("id"));
   const result = await instance.handleNightDiscuss(agent.id, body.message);

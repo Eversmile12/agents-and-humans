@@ -21,7 +21,9 @@ Bun.serve({
       });
     },
     "/assets/:filename": async (req) => {
-      const file = Bun.file(import.meta.dir + "/public/assets/" + req.params.filename);
+      const filename = req.params.filename.replace(/[^a-zA-Z0-9._-]/g, "");
+      if (!filename) return new Response("Not found", { status: 404 });
+      const file = Bun.file(import.meta.dir + "/public/assets/" + filename);
       if (await file.exists()) {
         return new Response(file);
       }
